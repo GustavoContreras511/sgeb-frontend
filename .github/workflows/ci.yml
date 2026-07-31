@@ -41,12 +41,14 @@ jobs:
         with:
           node-version: '22.12.0'
 
-      # Activates the exact pnpm version pinned in package.json's
-      # "packageManager" field (pnpm@11.18.0) via Corepack, which ships with
-      # Node — no arbitrary/global pnpm version is installed, and no
-      # third-party action is needed just to install pnpm.
-      - name: Enable Corepack (pnpm via packageManager field)
-        run: corepack enable
+      # Installs pnpm via the official pnpm-maintained action. `version` is
+      # intentionally omitted so package.json's "packageManager" field
+      # (pnpm@11.18.0) stays the single source of truth for which pnpm
+      # version is used — this action reads it automatically. Corepack is
+      # not used here: its bundled keyring failed to verify pnpm's
+      # signature in this environment ("Cannot find matching keyid").
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v6
 
       # Diagnostic output only — does not alter installation or runtime
       # behavior. Useful for confirming exactly what ran in a given job.

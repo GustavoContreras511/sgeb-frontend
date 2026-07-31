@@ -99,14 +99,20 @@ pre-commit-only tool and is never used in CI):
 **When it runs**: on every Pull Request targeting `develop` or `main`, and on
 every push to `develop` or `main`.
 
-**Runtime**: the CI workflow runs on Node `22.12.0`, the minimum version
-declared by this repo's `engines.node` (`>=22.12.0`) — not an exact pin, since
-`engines.node` only declares a floor. CI validates against that declared
-minimum rather than inventing or upgrading to a different version. pnpm is
-activated via Corepack from the `packageManager` field (`pnpm@11.18.0`), which
-_is_ an exact version. Dependencies are installed with
-`pnpm install --frozen-lockfile` against the committed `pnpm-lock.yaml`, which
-CI never modifies.
+**Runtime**: Node `22.12.0` — the minimum runtime declared by this repo's
+`engines.node` (`>=22.12.0`) — is the version CI tests against; `engines.node`
+only declares a floor, so this is not an exact pin the way pnpm's version is.
+pnpm is installed through the official
+[`pnpm/action-setup`](https://github.com/pnpm/action-setup) action, which
+reads its exact version (`pnpm@11.18.0`) directly from this repo's
+`packageManager` field — Corepack is **not** part of this workflow (its
+bundled keyring failed to verify pnpm's signature on GitHub's runners).
+Dependencies are installed with `pnpm install --frozen-lockfile` against the
+committed `pnpm-lock.yaml`, which CI never modifies.
+
+The workflow uses GitHub-maintained actions under `actions/*` (checkout,
+setup-node, cache) plus the pnpm-maintained `pnpm/action-setup` — not
+exclusively GitHub-maintained actions.
 
 This workflow does **not** deploy the application — it only validates it.
 
