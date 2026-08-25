@@ -14,6 +14,9 @@ export interface UsersContentProps {
   filters: UsersFilterState
   onFilterChange: (filters: UsersFilterState) => void
   onSelectUser: (uuidUsuario: string) => void
+  canInviteStaff?: boolean
+  onInviteStaff?: () => void
+  isInviteStaffDisabled?: boolean
 }
 
 /**
@@ -30,10 +33,17 @@ export function UsersContent({
   filters,
   onFilterChange,
   onSelectUser,
+  canInviteStaff,
+  onInviteStaff,
+  isInviteStaffDisabled,
 }: UsersContentProps) {
   return (
     <div className="flex flex-col gap-6">
-      <UsersPageHeader />
+      <UsersPageHeader
+        {...(canInviteStaff === undefined ? {} : { canInviteStaff })}
+        {...(onInviteStaff ? { onInviteStaff } : {})}
+        {...(isInviteStaffDisabled === undefined ? {} : { isInviteStaffDisabled })}
+      />
       <UsersFilters filters={filters} onFilterChange={onFilterChange} />
 
       {isLoading ? (
