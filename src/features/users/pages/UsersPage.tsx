@@ -29,12 +29,19 @@ function toSafeErrorMessage(error: unknown, fallback: string): string {
 }
 
 /**
- * Routed at /usuarios (capitán+admin — `GET /usuarios`'s
- * `middleware.rol(['capitan', 'admin'])`; hidden from a `mesero` session
- * in `NAV_ITEMS`, though `mesero` never opens this web app anyway). The
- * general account directory across all three roles — distinct from
- * `/meseros` (`WaitersPage`), which stays the specialized mesero-recruitment
- * + invitation screen and is not merged into or duplicated by this page.
+ * Routed at /usuarios — `admin`-only on this frontend (product-scoped:
+ * staff invitations, user management, and admin actions), even though the
+ * backend's own `middleware.rol(['capitan', 'admin'])` for `GET /usuarios`
+ * would still permit a `capitan` session to call it. `NAV_ITEMS` hides the
+ * sidebar entry for non-admin (`shared/components/layout/nav-items.ts`);
+ * `isAdmin` here is the route-level backstop for a direct `/usuarios`
+ * visit — `UsersContent`'s `canView` renders `UsersForbiddenState` instead
+ * of the real directory, and `useUsersQuery`'s `enabled: isAdmin` means a
+ * non-admin session never even fires `GET /usuarios` — same pattern
+ * `AuditLogPage`'s `canView`/`useAuditLogQuery`'s `enabled` already
+ * establish for `/bitacora`. Distinct from `/meseros` (`WaitersPage`),
+ * which stays the specialized mesero-recruitment + invitation screen and
+ * is not merged into or duplicated by this page.
  *
  * An `admin` session additionally sees "Invitar capitán o admin"
  * (`InviteStaffDialog`), reusing the same `POST /usuarios/invitaciones`
@@ -62,11 +69,12 @@ export function UsersPage() {
     }
   }, [filters.search])
 
-  const usersQuery = useUsersQuery({ ...filters, search: debouncedSearch })
   const session = useOidcSessionStore((state) => state.session)
   const currentUserUuid =
     session.status === 'authenticated' ? session.user.sub : undefined
   const isAdmin = session.status === 'authenticated' && session.user.rol === 'admin'
+
+  const usersQuery = useUsersQuery({ ...filters, search: debouncedSearch }, isAdmin)
 
   const rolesQuery = useRolesQuery()
   const invitableStaffRoles = (rolesQuery.data ?? []).filter((role) =>
@@ -92,6 +100,7 @@ export function UsersPage() {
   return (
     <>
       <UsersContent
+        canView={isAdmin}
         users={usersQuery.data ?? []}
         isLoading={usersQuery.isPending}
         {...(usersQuery.error

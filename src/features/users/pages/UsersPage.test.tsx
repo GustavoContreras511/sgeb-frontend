@@ -60,6 +60,7 @@ function authenticate(rol: 'admin' | 'capitan' | 'mesero' = 'admin') {
 beforeEach(() => {
   vi.mocked(requestSgeb).mockReset()
   useOidcSessionStore.getState().reset()
+  authenticate('admin')
 })
 
 interface MockOverrides {
@@ -287,15 +288,32 @@ describe('UsersPage', () => {
     expect(link).toHaveAttribute('href', '/meseros')
   })
 
-  it('never shows "Invitar capitán o admin" to a capitán session', async () => {
+  it('shows the forbidden state, and never fetches GET /usuarios, for a capitán session — "Usuarios" is admin-only on this frontend even though the backend still permits a capitán to call it', async () => {
     authenticate('capitan')
     mockBaseRequests()
     renderPage()
 
-    await screen.findByText('María López García')
     expect(
-      screen.queryByRole('button', { name: /Invitar capitán o admin/ }),
-    ).not.toBeInTheDocument()
+      await screen.findByText('No tienes permiso para ver esta sección'),
+    ).toBeInTheDocument()
+    expect(screen.queryByText('María López García')).not.toBeInTheDocument()
+    expect(requestSgeb).not.toHaveBeenCalledWith(
+      expect.objectContaining({ url: '/usuarios' }),
+    )
+  })
+
+  it('shows the forbidden state, and never fetches GET /usuarios, for a mesero session', async () => {
+    authenticate('mesero')
+    mockBaseRequests()
+    renderPage()
+
+    expect(
+      await screen.findByText('No tienes permiso para ver esta sección'),
+    ).toBeInTheDocument()
+    expect(screen.queryByText('María López García')).not.toBeInTheDocument()
+    expect(requestSgeb).not.toHaveBeenCalledWith(
+      expect.objectContaining({ url: '/usuarios' }),
+    )
   })
 
   it('disables "Invitar capitán o admin" until GET /roles resolves, so the dialog never opens with an empty role picker', async () => {
